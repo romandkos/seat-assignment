@@ -18,15 +18,15 @@ export const assignedToPath = 'properties.customFields.assignedTo'
 const resourceType = 'asset'
 
 const assignUser = (deskAssignment: IDeskAssignment) => {
-    return axios.put(`${PROXY_URL}/v2/${resourceType}/${deskAssignment.deskId}/custom-field/${assignedToPath}`, { userId: deskAssignment.userId })
+    return {}
 }
 
 const removeUser = (assetId: string) => {
-    return axios.delete(`${PROXY_URL}/v2/${resourceType}/${assetId}/custom-field/${assignedToPath}`)
+    return {}
 }
 
 const fetchFloorAssets = (floorId: string) => {
-    return axios.get(`${PROXY_URL}/v2/${resourceType}/?floorId=${floorId}`)
+    return {}
 }
 
 const fetchAssetsCustomField = (assetsId: string[]) => {

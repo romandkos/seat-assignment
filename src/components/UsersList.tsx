@@ -84,9 +84,6 @@ const UsersList = (props: UsersListProps) => {
     const onDragStart = (event: DragEvent, user: IUserElement) => {
         const elem = event.currentTarget
     
-        // change status to draggable element so that it is used in its dragging copy
-        elem.children[0].children[1].children[1].innerHTML = "Assigning..."
-    
         collectUserDragUpdate({
             type: UserDragUpdateType.start,
             userId: user.id
@@ -125,7 +122,6 @@ const UsersList = (props: UsersListProps) => {
                   </Col>
                   <Col span={14}>
                     <div className="user-name">{user.firstName} {user.lastName}</div>
-                    <div className="user-assignment">{assignedStatus(user)}</div>
                   </Col>
                   <Col span={4}>
                     {isUserAssigned(user, sceneId) &&

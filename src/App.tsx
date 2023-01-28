@@ -1,118 +1,110 @@
-import { Layout } from 'antd'
-import 'antd/dist/antd.css'
-import axios from 'axios'
-import _ from 'lodash'
-import React, { useEffect, useLayoutEffect, useState } from 'react'
-import './App.css'
-import FloorPlan, { deskTags } from './components/FloorPlan'
-import Navigation from './components/Navigation'
-import UsersList from './components/UsersList'
-import { DEFAULT_SCENE_ID } from './shared/constants'
-import AssetService from './shared/services/AssetService'
-import FloorService, { IFloor } from './shared/services/FloorService'
-import UserService, { IDeskAssignment, IUserElement } from './shared/services/UserService'
+import { Layout } from "antd";
+import "antd/dist/antd.css";
+
+import _ from "lodash";
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import "./App.css";
+import FloorPlan, { deskTags } from "./components/FloorPlan";
+import Navigation from "./components/Navigation";
+import UsersList from "./components/UsersList";
+import { DEFAULT_SCENE_ID } from "./shared/constants";
+import { IFloor } from "./shared/services/FloorService";
+import UserService, {
+  IDeskAssignment,
+  IUserElement,
+} from "./shared/services/UserService";
 
 const App = () => {
-  const { Sider, Content } = Layout
-  const urlParams = new URLSearchParams(window.location.search)
-  const sceneId = urlParams.get('floorId') || DEFAULT_SCENE_ID
+  const { Sider, Content } = Layout;
+  const urlParams = new URLSearchParams(window.location.search);
+  const sceneId = urlParams.get("floorId") || DEFAULT_SCENE_ID;
 
-  const [users, setUsers] = useState<Array<IUserElement>>([])
-  const [deskAssignments, setDeskAssignments] = useState<Array<IDeskAssignment>>([])
-  const [loading, isLoading] = useState<boolean>(false)
-  const [deskAssignment, addDeskAssignment] = useState<IDeskAssignment>()
-  const [removedDeskAssignment, removeDeskAssignment] = useState<IDeskAssignment>()
-  const [floor, setFloor] = useState<IFloor>()
-
-
+  const [users, setUsers] = useState<Array<IUserElement>>([]);
+  const [deskAssignments, setDeskAssignments] = useState<
+    Array<IDeskAssignment>
+  >([]);
+  const [loading, isLoading] = useState<boolean>(false);
+  const [deskAssignment, addDeskAssignment] = useState<IDeskAssignment>();
+  const [removedDeskAssignment, removeDeskAssignment] =
+    useState<IDeskAssignment>();
+  const [floor] = useState<IFloor>();
 
   useEffect(() => {
-    if (!sceneId) return
+    if (!sceneId) return;
 
-    isLoading(true)
+    isLoading(true);
 
     // load users
-    setUsers(UserService.getAll())
-
-    // load floor data
-    FloorService.findById(sceneId).then((response: any) => {
-      setFloor({
-        id: response.data.id,
-        name: response.data.properties.name
-      })
-    })
-
-    // get floor's assets to load already  existing desk assignments
-    AssetService.fetchFloorAssets(sceneId).then((response: any) => {
-      const deskAssets = response.data.features.filter((f: any) => f.properties.tags.find((t: any) => deskTags.includes(t)))
-      const deskAssetsIds = deskAssets.map((d: any) => d.id)
-      AssetService.fetchAssetsCustomField(deskAssetsIds).then(axios.spread((...responses: any[]) => {
-        const deskAssignments = deskAssetsIds.map((id: string, index: number) => {
-          if (responses[index]?.data.properties && responses[index].data.properties.customFields.assignedTo?.userId) {
-            return {
-              deskId: id,
-              userId: responses[index].data.properties.customFields.assignedTo.userId
-            }
-          }
-          return undefined
-        }).filter((da: any) => da !== undefined)
-        setDeskAssignments(deskAssignments)
-      })).finally(() => { isLoading(false) })
-    })
-
-  }, [sceneId])
+    setUsers(UserService.getAll());
+  }, [sceneId]);
 
   useEffect(() => {
     // remove desk assignment
-    if (!removedDeskAssignment) return
+    if (!removedDeskAssignment) return;
 
-    setUsers(users?.map((stateUser) => {
-      return stateUser.id === removedDeskAssignment.userId ? { ...stateUser, "isLoading": true } : stateUser
-    }))
-
-    AssetService.removeUser(removedDeskAssignment.deskId).then(() => {
-      setDeskAssignments(deskAssignments.filter((item) => {
-        return item.deskId !== removedDeskAssignment.deskId
-      }))
-    }).then(() => {
-      setUsers(users?.map((stateUser) => {
-        return stateUser.id === removedDeskAssignment.userId ? { ...stateUser, "isLoading": false } : stateUser
-      }))
-    })
+    setUsers(
+      users?.map((stateUser) => {
+        return stateUser.id === removedDeskAssignment.userId
+          ? { ...stateUser, isLoading: true }
+          : stateUser;
+      })
+    );
+    setDeskAssignments(
+      deskAssignments.filter((item) => {
+        return item.deskId !== removedDeskAssignment.deskId;
+      })
+    );
+    setUsers(
+      users?.map((stateUser) => {
+        return stateUser.id === removedDeskAssignment.userId
+          ? { ...stateUser, isLoading: false }
+          : stateUser;
+      })
+    );
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [removedDeskAssignment])
+  }, [removedDeskAssignment]);
 
   useEffect(() => {
     // add desk assignment
-    if (!deskAssignment) return
+    if (!deskAssignment) return;
 
     // check if the desk was taken to clear out previous assignment
     const assignmentToReplace = _.find(deskAssignments, (item) => {
-      return String(item.deskId) === String(deskAssignment.deskId)
+      return String(item.deskId) === String(deskAssignment.deskId);
     });
 
-    setUsers(users?.map((stateUser) => {
-      return stateUser.id === deskAssignment.userId ? { ...stateUser, "isLoading": true } : stateUser
-    }))
+    setUsers(
+      users?.map((stateUser) => {
+        return stateUser.id === deskAssignment.userId
+          ? { ...stateUser, isLoading: true }
+          : stateUser;
+      })
+    );
 
     // add assignment
-    AssetService.assignUser(deskAssignment).then(() => {
-      if (assignmentToReplace) {
-        setDeskAssignments(deskAssignments.filter((item) => {
-          return item.deskId !== assignmentToReplace.deskId
-        }).concat(deskAssignment))
-      } else {
-        setDeskAssignments(deskAssignments.concat(deskAssignment))
-      }
+    if (assignmentToReplace) {
+      setDeskAssignments(
+        deskAssignments
+          .filter((item) => {
+            return item.deskId !== assignmentToReplace.deskId;
+          })
+          .concat(deskAssignment)
+      );
+    } else {
+      setDeskAssignments(deskAssignments.concat(deskAssignment));
+    }
 
-      setUsers(users?.map((stateUser) => {
-        return stateUser.id === deskAssignment.userId ? { ...stateUser, "isLoading": false, "isDragging": false } : stateUser
-      }))
-    })
+    setUsers(
+      users?.map((stateUser) => {
+        return stateUser.id === deskAssignment.userId
+          ? { ...stateUser, isLoading: false, isDragging: false }
+          : stateUser;
+      })
+    );
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deskAssignment])
+  }, [deskAssignment]);
 
   return (
     <div className="App">
@@ -141,7 +133,7 @@ const App = () => {
         </Layout>
       </Layout>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;
