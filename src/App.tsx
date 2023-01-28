@@ -24,31 +24,10 @@ const App = () => {
   const [removedDeskAssignment, removeDeskAssignment] = useState<IDeskAssignment>()
   const [floor, setFloor] = useState<IFloor>()
 
-  const [token, setToken] = useState<string>()
 
-  useLayoutEffect(() => {
-    if (token) return
-    axios.get(`${process.env.REACT_APP_BACKEND_URL}/temp-token`).then(response => {
-      const tempToken = response?.data?.authorization
-      if (!tempToken) return;
-      setToken(tempToken)
-
-      axios.interceptors.request.use((config) => {
-        config.params = config.params || {};
-
-        if (tempToken) {
-          config.headers.common['Authorization'] = tempToken;
-        }
-        return config;
-      }, (error) => {
-        console.log(error)
-        return Promise.reject(error);
-      });
-    })
-  })
 
   useEffect(() => {
-    if (!sceneId || !token) return
+    if (!sceneId) return
 
     isLoading(true)
 
@@ -81,7 +60,7 @@ const App = () => {
       })).finally(() => { isLoading(false) })
     })
 
-  }, [sceneId, token])
+  }, [sceneId])
 
   useEffect(() => {
     // remove desk assignment
